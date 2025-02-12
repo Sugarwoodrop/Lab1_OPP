@@ -23,7 +23,7 @@ double* Multiplication(double** Matrix, double* Vector) {
 	double* final_vector = (double*)calloc(N ,sizeof(double));
 	if (!final_vector) return NULL;
 	int i;
-	#pragma omp parallel for schedule(static, 64)
+	#pragma omp parallel for
 	for (i = 0; i < N; ++i) {
 		double sum = 0;
 		for (int j = 0; j < N; ++j) {
