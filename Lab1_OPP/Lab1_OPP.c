@@ -10,7 +10,7 @@ double Norma(double* Vector) {
 	double sum = 0;
 	double final_number;
 	int i;
-	#pragma omp parallel for reduction(+:Sum)
+	#pragma omp parallel for reduction(+:sum)
 	for (i = 0; i < N; ++i) {
 		sum += pow(Vector[i], 2);
 	}
