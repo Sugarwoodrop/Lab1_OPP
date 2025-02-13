@@ -88,8 +88,6 @@ int main(void)
 		arbitrary_vector[i] = sin((2 * 3.14159 * i)/N);
 	}
 
-	double start = omp_get_wtime();
-
 	double* vector = Multiplication(matrix, arbitrary_vector);
 	double* mult = Multiplication(matrix, desired_vector);
         double* final = Minus(mult, vector);
@@ -97,6 +95,7 @@ int main(void)
 	if (!mult) return 1;
 	if (!final) return 1;
 
+	double start = omp_get_wtime();
 	while ((Norma(final) / Norma(vector)) > pow(10, -5)) {
 
 		final = Multiplication_Scalar(final, 0.01);
