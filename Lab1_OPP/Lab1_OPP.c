@@ -88,14 +88,14 @@ int main(void)
 		arbitrary_vector[i] = sin((2 * 3.14159 * i)/N);
 	}
 
+	double start = omp_get_wtime();
+
 	double* vector = Multiplication(matrix, arbitrary_vector);
 	double* mult = Multiplication(matrix, desired_vector);
-    double* final = Minus(mult, vector);
+        double* final = Minus(mult, vector);
 	if (!vector) return 1;
 	if (!mult) return 1;
 	if (!final) return 1;
-
-	double start = omp_get_wtime();
 
 	while ((Norma(final) / Norma(vector)) > pow(10, -5)) {
 
