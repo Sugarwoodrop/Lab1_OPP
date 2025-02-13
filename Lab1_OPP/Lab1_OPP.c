@@ -1,4 +1,4 @@
-﻿#include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
@@ -9,9 +9,9 @@
 double Norma(double* Vector) {
 	double sum = 0;
 	double final_number;
-	int i;
+
 	#pragma omp parallel for reduction(+:sum)
-	for (i = 0; i < N; ++i) {
+	for (int i = 0; i < N; ++i) {
 		sum += pow(Vector[i], 2);
 	}
 	final_number = sqrt(sum);
@@ -22,9 +22,9 @@ double Norma(double* Vector) {
 double* Multiplication(double** Matrix, double* Vector) {
 	double* final_vector = (double*)calloc(N ,sizeof(double));
 	if (!final_vector) return NULL;
-	int i;
+	
 	#pragma omp parallel for
-	for (i = 0; i < N; ++i) {
+	for (int i = 0; i < N; ++i) {
 		double sum = 0;
 		for (int j = 0; j < N; ++j) {
 			sum += Matrix[i][j] * Vector[j];
@@ -38,9 +38,9 @@ double* Multiplication(double** Matrix, double* Vector) {
 double* Minus(double* first_vector, double* second_vector) {
     double* final_vector = (double*)malloc(sizeof(double)*N);
 	if (!final_vector) return NULL;
-	int i;
+	
 	#pragma omp parallel for
-	for (i = 0; i < N; ++i) {
+	for (int i = 0; i < N; ++i) {
 		final_vector[i] = first_vector[i] - second_vector[i];
 	}
 
@@ -50,9 +50,9 @@ double* Minus(double* first_vector, double* second_vector) {
 double* Multiplication_Scalar(double* Vector, double Scalar) {
 	double* final_vector = (double*)malloc(sizeof(double) * N);
 	if (!final_vector) return NULL;
-	int i;
+	
 	#pragma omp parallel for	
-	for (i = 0; i < N; ++i) {
+	for (int i = 0; i < N; ++i) {
 		final_vector[i] = Vector[i] * Scalar;
 	}
 	
@@ -63,7 +63,7 @@ double* Multiplication_Scalar(double* Vector, double Scalar) {
 
 int main(void)
 {
-	omp_set_num_threads(1);
+	omp_set_num_threads(12);
 	double** matrix = (double**)calloc(N, sizeof(double*));
 	double* desired_vector = (double*)calloc(N, sizeof(double));
 	double* arbitrary_vector = (double*)calloc(N, sizeof(double));
@@ -96,6 +96,7 @@ int main(void)
 	if (!final) return 1;
 
 	double start = omp_get_wtime();
+
 	while ((Norma(final) / Norma(vector)) > pow(10, -5)) {
 
 		final = Multiplication_Scalar(final, 0.01);
@@ -104,8 +105,9 @@ int main(void)
 		mult = Multiplication(matrix, desired_vector);
 		final = Minus(mult, vector);
 	}
+
 	double end = omp_get_wtime();
-	printf("%f", end - start);
+	printf("%f\n", end - start);
 
 	for (int i = 0; i < N; ++i) {
 		free(matrix[i]);
