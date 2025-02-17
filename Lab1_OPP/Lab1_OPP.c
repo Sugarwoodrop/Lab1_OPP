@@ -9,108 +9,89 @@
 double Norma(double* Vector) {
 	double sum = 0;
 	double final_number;
-
-	#pragma omp parallel for reduction(+:sum)
+    #pragma omp parallel for reduction(+:sum)
 	for (int i = 0; i < N; ++i) {
-		sum += pow(Vector[i], 2);
+		sum += Vector[i] * Vector[i] ;
 	}
 	final_number = sqrt(sum);
 
 	return final_number;
 }
 
-double* Multiplication(double** Matrix, double* Vector) {
-	double* final_vector = (double*)calloc(N ,sizeof(double));
-	if (!final_vector) return NULL;
-	
-	#pragma omp parallel for
+void Multiplication(double* final_vector, double* Matrix, double* Vector) {
+    #pragma omp parallel for
 	for (int i = 0; i < N; ++i) {
 		double sum = 0;
 		for (int j = 0; j < N; ++j) {
-			sum += Matrix[i][j] * Vector[j];
+			sum += Matrix[i * N + j] * Vector[j];
 		}
 		final_vector[i] = sum;
 	}
-
-	return final_vector;
+    
 }
 
-double* Minus(double* first_vector, double* second_vector) {
-    double* final_vector = (double*)malloc(sizeof(double)*N);
-	if (!final_vector) return NULL;
-	
+void Minus(double* result,double* first_vector, double* second_vector) {
+    #pragma omp parallel for 
+	for (int i = 0; i < N; ++i) {
+		result[i] = first_vector[i] - second_vector[i];
+	}
+}
+
+void Multiplication_Scalar(double* Vector) {
 	#pragma omp parallel for
 	for (int i = 0; i < N; ++i) {
-		final_vector[i] = first_vector[i] - second_vector[i];
+		Vector[i] = Vector[i] * 0.01;
 	}
-
-	return final_vector;
-}
-
-double* Multiplication_Scalar(double* Vector, double Scalar) {
-	double* final_vector = (double*)malloc(sizeof(double) * N);
-	if (!final_vector) return NULL;
-	
-	#pragma omp parallel for	
-	for (int i = 0; i < N; ++i) {
-		final_vector[i] = Vector[i] * Scalar;
-	}
-	
-	free(Vector);
-	return final_vector;
 }
 
 
 int main(void)
 {
-	omp_set_num_threads(12);
-	double** matrix = (double**)calloc(N, sizeof(double*));
+	omp_set_num_threads(2);
+	double* matrix = (double*)calloc(N * N, sizeof(double*));
 	double* desired_vector = (double*)calloc(N, sizeof(double));
 	double* arbitrary_vector = (double*)calloc(N, sizeof(double));
 	if (!matrix) return 1;
 	if (!desired_vector) return 1;
 	if (!arbitrary_vector) return 1;
-		
-	for (int i = 0; i < N; ++i) {
-		matrix[i] = (double*)calloc(N, sizeof(double));
-		if (!matrix[i]) return 1;
-	}
 
 	for (int i = 0; i < N; ++i) {
 		for (int j = 0; j < N; ++j) {
 			if (i == j) { 
-				matrix[j][i] = 2.0;
+				matrix[i * N + j] = 2.0;
 			}
 			else {
-				matrix[j][i] = 1.0;
+				matrix[i * N + j] = 1.0;
 			}
 		}
 		arbitrary_vector[i] = sin((2 * 3.14159 * i)/N);
 	}
 
-	double* vector = Multiplication(matrix, arbitrary_vector);
-	double* mult = Multiplication(matrix, desired_vector);
-        double* final = Minus(mult, vector);
-	if (!vector) return 1;
-	if (!mult) return 1;
-	if (!final) return 1;
+    double* vector = (double*)calloc(N, sizeof(double));
+	double* mult = (double*)calloc(N, sizeof(double));
+    double* final = (double*)calloc(N, sizeof(double));
 
-	double start = omp_get_wtime();
-	while ((Norma(final) / Norma(vector)) > pow(10, -5)) {
+    double start = omp_get_wtime();
 
-		final = Multiplication_Scalar(final, 0.01);
-		desired_vector = Minus(desired_vector, final);
+	Multiplication(vector, matrix, arbitrary_vector);
+	Multiplication(mult, matrix, desired_vector);
+    Minus(final, mult, vector);
 
-		mult = Multiplication(matrix, desired_vector);
-		final = Minus(mult, vector);
-	}
+    double norm_vector = Norma(vector);  
+    double norm_final = Norma(final); 
 
+	     while ((norm_final / norm_vector) > 1e-5) {
+           	Multiplication_Scalar(final);
+                
+            Minus(desired_vector,desired_vector, final);
+			Multiplication(mult,matrix, desired_vector);
+        	Minus(final, mult, vector);
+
+            norm_final = Norma(final);
+		}
 	double end = omp_get_wtime();
 	printf("%f\n", end - start);
 
-	for (int i = 0; i < N; ++i) {
-		free(matrix[i]);
-	}
 	free(matrix);
 	free(desired_vector);
 	free(vector);
